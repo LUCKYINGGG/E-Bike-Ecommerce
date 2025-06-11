@@ -1,0 +1,6 @@
+﻿namespace ProjectWebApp.Components.Pages.Purchasing
+{
+    public class dummy
+    {
+    }
+}

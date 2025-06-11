@@ -1,0 +1,71 @@
+﻿@page "/pages/EBikesReturn"
+@using System.Security.Claims
+ @inject AuthenticationStateProvider authenticationStateProvider;
+
+<h3>EBikesReturn</h3>
+
+ <AuthorizeView Roles="Sales Manager, Shop Manager, Salesperson, Store Staff">
+     <NotAuthorized>
+         <p role="status">Only managers and staff have access to see or perform actions on sales and returns.</p>
+     </NotAuthorized>
+     <Authorized>
+
+
+@if (HasErrorMessage)
+{
+    <MudAlert Elevation="2" Severity="Severity.Error" Dense="true">
+        <MudText Typo="Typo.h6">@_errorMessage</MudText>
+        @foreach (var error in _errorDetails)
+        {
+            <MudText Typo="Typo.body2">@error</MudText>
+        }
+
+    </MudAlert>
+}
+
+@if (HasFeedbackMessage)
+{
+    <MudAlert Elevation="2" Severity="Severity.Info" Dense="true">
+        <MudText Typo="Typo.h6">@_feedbackMessage</MudText>
+    </MudAlert>
+}
+
+<MudStack Row="true" Spacing="4" AlignItems="AlignItems.Center">
+    <MudTextField @bind-Value="_saleID" Label="Sales Invoice #" Variant="Variant.Text" />
+    <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="Search">Search</MudButton>
+    <MudButton Variant="Variant.Filled" Color="Color.Info" OnClick="InvoiceClear">Clear</MudButton>
+</MudStack>
+
+@* <MudTable Items="_saleDetails.Where(x => _selectedCustomer.CustomerID == _sale.CustomerID)">
+    <HeaderContent>
+        <MudTh>Part</MudTh>
+        <MudTh>Price</MudTh>
+        <MudTh>Quantity</MudTh>
+        <MudTh>Ext Price</MudTh>
+    </HeaderContent>
+    <RowTemplate Context="item">
+        <MudTd>@item.PartID</MudTd>
+        <MudTd>@item.SellingPrice.ToString()</MudTd>
+        <MudTd>@item.Quantity</MudTd>
+        <MudTd>@(item.SellingPrice * item.Quantity)</MudTd>
+        <MudTd>
+            <MudButton Color="Color.Primary" OnClick="() => AddPartsToCart()">
+                <MudIcon Icon="@Icons.Material.Filled.Add" />
+                <MudText>ADD</MudText>
+            </MudButton>
+        </MudTd>
+    </RowTemplate>
+</MudTable> *@
+
+    </Authorized>
+
+</AuthorizeView>
+
+<MudPaper Elevation="4" Class="my-5">
+    <MudText Typo="Typo.h5" Class="my-3 py-3">Logged In Information:</MudText>
+    <MudStack Row="true" Spacing="4" Class="py-3">
+        <p>UserID: @userId</p>
+        <p>Employee Name: @employeeName</p>
+        <p>User Roles: @(roles.Any() ? string.Join(",", roles) : "None")</p>
+    </MudStack>
+</MudPaper>

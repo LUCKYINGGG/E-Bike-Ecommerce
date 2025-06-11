@@ -1,0 +1,343 @@
+﻿@page "/Pages/Servicing"
+@using ServicingSystem.ViewModels;
+@using System.Security.Claims
+@inject AuthenticationStateProvider authenticationStateProvider;
+
+<PageTitle>Bike Servicing</PageTitle>
+
+
+<MudText Typo="Typo.h2">Servicing</MudText>
+
+<MudPaper Elevation="4" Class="my-5 pa-5">
+    <MudText Typo="Typo.h5" Class="my-3">Logged In Information:</MudText>
+    <MudStack Row="true" Spacing="4" Class="py-3">
+        <p>Employee ID: @userId</p>
+        <p>Employee Name: @employeeName</p>
+        <p>Employee Roles: @(roles.Any() ? string.Join(",", roles) : "None")</p>
+    </MudStack>
+</MudPaper>
+
+@if (HasErrorMessage)
+{
+    <MudAlert Elevation="2" Severity="Severity.Error" Dense="true">
+        <MudText Typo="Typo.h6">@_errorMessage</MudText>
+        @foreach (var error in _errorDetails)
+        {
+            <MudText Typo="Typo.body2">@error</MudText>
+        }
+
+    </MudAlert>
+}
+
+@if (HasFeedbackMessage)
+{
+    <MudAlert Elevation="2" Severity="Severity.Info" Dense="true">
+        <MudText Typo="Typo.h6">@_feedbackMessage</MudText>
+    </MudAlert>
+}
+
+
+@if (!authenticationStateProvider.GetAuthenticationStateAsync().Result.User.Identity.IsAuthenticated)
+{
+    NavigationManager.NavigateTo($"/Account/Login", true);
+}
+
+<AuthorizeView Roles="Sales Manager, Shop Manager, Parts Manager, Mechanic">
+    <NotAuthorized>
+        <MudText Typo="Typo.h4">Only managers and Mechanic have access to see or perform actions on servicing.</MudText>
+    </NotAuthorized>
+
+    <Authorized>
+
+        <MudStack Row="true" Spacing="4" AlignItems="AlignItems.Center" Class="mt-4">
+            <MudTextField @bind-Value="_lastName" Label="Last Name / Partial" Variant="Variant.Outlined" />
+            <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="Search">Search</MudButton>
+            <MudButton Variant="Variant.Filled" Color="Color.Info" OnClick="LastnameSearchClear">Clear</MudButton>
+        </MudStack>
+
+        @* Customer list *@
+        @if (Customers.Count > 0)
+        {
+            <MudDataGrid Items="Customers" Striped="true" FixedFooter="true" FixedHeader="true" Height="35vh" Class="mt-4">
+                <Columns>
+                    <TemplateColumn>
+                        <HeaderTemplate Context="customerAction">Action</HeaderTemplate>
+
+                        <CellTemplate Context="customerContext">
+                            <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="() => SelectCustomer(customerContext.Item.CustomerID)">Select</MudButton>
+                        </CellTemplate>
+
+                    </TemplateColumn>
+
+                    <PropertyColumn Property="x => x.Name" Title="Name" />
+                    <PropertyColumn Property="x => x.ContactPhone " Title="Phone" />
+                    <PropertyColumn Property="x => x.Address " Title="Address" />
+                </Columns>
+
+            </MudDataGrid>
+        }
+        else
+        {
+            <NoRecordsContent>
+                <MudText Typo="Typo.h6">
+                    @((_noRecords ? "No customers found."
+                        : "Please search for customers."))
+                </MudText>
+            </NoRecordsContent>
+        }
+
+
+        @if (_customerVehicles.Count > 0)
+        {
+            <MudStack Row="true" Spacing="4" AlignItems="AlignItems.Center" Class="mt-4">
+                <MudSelect Label="Customer Vehicle" @bind-Value="_customerVehicle.Vin" Variant="Variant.Outlined">
+                    @foreach (var item in _customerVehicles)
+                    {
+                        <MudSelectItem T="string" Value="@item.Vin">@item.MakeModel</MudSelectItem>
+                    }
+
+                </MudSelect>
+                <MudText>@_customerVehicle.Vin</MudText>
+            </MudStack>
+        }
+
+
+        @if (!string.IsNullOrEmpty(_customerVehicle.Vin))
+        {
+            <MudForm @ref="_customerForm" @bind-IsValid="_isFormValid" @bind-IsTouched="_hasDataChanged" Class="mt-4">
+                <MudGrid Justify="Justify.SpaceAround" Spacing="5" Class="mt-4">
+                    @* Service section *@
+                    <MudItem xs="5">
+                        <MudPaper Elevation="4" Class="pa-4" MinHeight="100%" MaxHeight="100%">
+
+                            @* service section top *@
+                            <MudPaper Elevation="4" Class="pa-4 mt-4">
+                                <MudText Typo="Typo.h3">Add Service</MudText>
+
+                                <MudStack Row="true" Spacing="4">
+                                    <MudText>Select Service: </MudText>
+                                    @* <MudSelect @bind-Value="_standardJob.StandardJobID" Variant="Variant.Outlined" Label="Standard Service" > *@
+                                    <MudSelect T="int" Variant="Variant.Outlined" ToStringFunc="@ServiceConverter" Value="_standardJob.StandardJobID" ValueChanged="value => StandardJobsOnChange(value)">
+                                        @foreach (var standardjob in _standardJobs)
+                                        {
+                                            <MudSelectItem T="int" Value="@standardjob.StandardJobID">@standardjob.Description</MudSelectItem>
+                                        }
+                                    </MudSelect>
+                                </MudStack>
+
+                                <MudStack Row="true" Spacing="4">
+                                    <MudText>Service: </MudText>
+                                    <MudTextField Label="Selected Service" @bind-Value="_standardJob.Description" Variant="Variant.Outlined" MaxLength="15" Required="true" RequiredError="Please select a service."></MudTextField>
+                                </MudStack>
+
+                                <MudStack Row="true" Spacing="4">
+                                    <MudText>Hours: </MudText>
+                                    <MudTextField Label="Service Hours" @bind-Value="_standardJob.StandardHours" Variant="Variant.Outlined" MaxLength="15" Required="true" RequiredError="Please select a service." Immediate="true"></MudTextField>
+                                </MudStack>
+
+                                <MudStack Row="true" Spacing="4">
+                                    <MudText>Shop Rate: $ @StandardJobsView.Rate </MudText>
+                                </MudStack>
+
+                                <MudStack Row="true" Spacing="4">
+                                    <MudText>Comments: </MudText>
+                                    <MudTextField Label="Comments" T="string" @bind-Value="_standardJob.Comments" Variant="Variant.Outlined" MaxLength="15" Immediate="true" Lines="3"></MudTextField>
+                                </MudStack>
+
+                                <MudStack Row="true" Justify="Justify.SpaceBetween" Class="mt-4">
+                                    <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="() => ServiceReset()">
+                                        Reset
+                                    </MudButton>
+                                    <MudButton Variant="Variant.Filled" Color="Color.Tertiary" OnClick="AddServiceJob" Disabled="!_isFormValid">
+                                        Add Service
+                                    </MudButton>
+                                </MudStack>
+
+                            </MudPaper>
+
+                            @* service jobs bottom: the Grid *@
+                            <MudPaper Elevation="4" Class="pa-4 mt-4">
+                                <MudTable Items="_serviceJobsGrid" Dense="true" Striped="true">
+                                    <HeaderContent>
+                                        <MudTh>Service</MudTh>
+                                        <MudTh>Hours</MudTh>
+                                        <MudTh>Rate</MudTh>
+                                        <MudTh>Ext Price</MudTh>
+                                        <MudTh>Action</MudTh>
+                                    </HeaderContent>
+                                    <RowTemplate Context="item">
+                                        <MudTd>@item.Description</MudTd>
+                                        <MudTd>@item.StandardHours</MudTd>
+                                        <MudTd>$@StandardJobsView.Rate</MudTd>
+                                        <MudTd>@item.ExtPrice.ToString("C2")</MudTd>
+                                        <MudTd>
+                                            <MudButton Color="Color.Error" OnClick="() => RemoveServiceJob(item)">
+                                                <MudIcon Icon="@Icons.Material.Outlined.DeleteForever" />
+                                            </MudButton>
+                                        </MudTd>
+                                    </RowTemplate>
+                                </MudTable>
+                            </MudPaper>
+
+                            <MudStack Class="mt-4">
+                                <MudText>Service Subtotal: @ComputeServiceSubtotal().ToString("C2") </MudText>
+                            </MudStack>
+                        </MudPaper>
+                    </MudItem>
+
+                    @* Part section *@
+                    <MudItem xs="5">
+                        <MudPaper Elevation="4" Class="pa-4 " MinHeight="100%" MaxHeight="100%">
+                            @* Part first section *@
+                            <MudPaper Elevation="4" Class="pa-4 mt-4">
+                                <MudText Typo="Typo.h3">Add Part</MudText>
+
+                                <MudStack Row="true" Spacing="4">
+                                    <MudText>Select Category: </MudText>
+                                    <MudSelect T="int" Variant="Variant.Outlined" ToStringFunc="@PartConverter" Value="_category.CategoryID" ValueChanged="value => PartCategoryOnChange(value)">
+                                        @foreach (var item in _listOfCategories)
+                                        {
+                                            <MudSelectItem T="int" Value="@item.CategoryID">@item.Description</MudSelectItem>
+                                        }
+                                    </MudSelect>
+                                </MudStack>
+
+                                <MudTable Items="_listOfParts.Where(x => !_selectedParts.Any(s => s.PartID ==  x.PartID ) )" Dense="true" Striped="true">
+                                    <HeaderContent>
+                                        <MudTh>Part</MudTh>
+                                        <MudTh>Price</MudTh>
+                                        <MudTh>QOH</MudTh>
+                                        <MudTh>Qty</MudTh>
+                                        <MudTh>Action</MudTh>
+                                    </HeaderContent>
+                                    <RowTemplate Context="item">
+                                        <MudTd>@item.Description</MudTd>
+                                        <MudTd>@item.SellingPrice.ToString("C2")</MudTd>
+                                        <MudTd>@item.QuantityOnHand</MudTd>
+                                        <MudTd><MudNumericField @bind-value="@item.Qty" Variant="Variant.Text" Min="1" Max="@item.QuantityOnHand" /></MudTd>
+                                        <MudTd>
+                                            <MudButton Color="Color.Primary" OnClick="() => AddPart(item)">
+                                                <MudIcon Icon="@Icons.Material.Filled.Add" />
+                                                <MudText>ADD</MudText>
+                                            </MudButton>
+                                        </MudTd>
+                                    </RowTemplate>
+                                    <PagerContent>
+                                        <MudTablePager />
+                                    </PagerContent>
+                                </MudTable>
+                            </MudPaper>
+
+                            @* Part second section, the grid *@
+                            <MudPaper Elevation="4" Class="pa-4 mt-4">
+                                <MudTable Items="_selectedParts" Dense="true">
+                                    <HeaderContent>
+                                        <MudTh>Part</MudTh>
+                                        <MudTh>Price</MudTh>
+                                        <MudTh>Qty</MudTh>
+                                        <MudTh>Ext Price</MudTh>
+                                        <MudTh>Action</MudTh>
+                                    </HeaderContent>
+                                    <RowTemplate Context="item">
+                                        <MudTd>@item.Description</MudTd>
+                                        <MudTd>@item.SellingPrice.ToString("C2")</MudTd>
+                                        <MudTd><MudNumericField @bind-Value="@item.Qty" Variant="Variant.Text" Min="1" Max="@item.QuantityOnHand" /></MudTd>
+                                        <MudTd>@item.ExtPrice.ToString("C2")</MudTd>
+                                        <MudTd>
+                                            <MudButton Color="Color.Error" OnClick="() => DeletePart(item)">
+                                                <MudIcon Icon="@Icons.Material.Outlined.DeleteForever" />
+                                            </MudButton>
+                                        </MudTd>
+                                    </RowTemplate>
+                                </MudTable>
+                            </MudPaper>
+
+                            <MudStack Class="mt-4">
+                                <MudText>Parts Subtotal: @ComputePartSubtotal().ToString("C2") </MudText>
+                            </MudStack>
+                        </MudPaper>
+                    </MudItem>
+
+                    @* Checkout section *@
+
+                    <MudItem xs="2">
+                        <MudPaper Elevation="4" Class="pa-4">
+                            <MudGrid>
+                                <MudItem xs="12">
+                                    <MudText Typo="Typo.h3">Totals</MudText>
+
+                                    <MudStack Class="d-flex align-center justify-center mud-width-full py-3">
+                                        <MudText>Subtotal: @CalculateSubtotal().ToString("C2") </MudText>
+                                    </MudStack>
+
+                                    <MudStack Class="d-flex align-center justify-center mud-width-full py-3">
+                                        <MudText>Discount: @Discount().ToString("C2") </MudText>
+                                    </MudStack>
+
+                                    <MudStack Class="d-flex align-center justify-center mud-width-full py-3">
+                                        <MudText>GST: @CalculateGST().ToString("C2") </MudText>
+                                    </MudStack>
+
+                                    <MudStack Spacing="4" AlignItems="AlignItems.Center" Class="mb-5">
+                                        <MudText>Total: @CalculateTotal().ToString("C2") </MudText>
+                                    </MudStack>
+
+                                    <MudStack Row="true" Class="d-flex align-center justify-center mud-width-full py-3">
+
+                                        @if (authenticationStateProvider.GetAuthenticationStateAsync().Result.User.Identity.IsAuthenticated && authenticationStateProvider.GetAuthenticationStateAsync().Result.User.IsInRole("Shop Manager"))
+                                        {
+                                            <MudTextField @bind-Value="_coupon.CouponIDValue" Variant="Variant.Outlined" Adornment="Adornment.End" AdornmentIcon="@CouponIcon()" AdornmentColor="@CouponIconColor()"></MudTextField>
+
+                                            <MudButton Variant="Variant.Filled" Color="Color.Tertiary" OnClick="() => VerifyCoupon()">
+                                                Verify
+                                            </MudButton>
+                                        }
+                                        else
+                                        {
+                                            <MudText Typo="Typo.h6">Only shop manager can apply coupon.</MudText>
+                                        }
+
+                                    </MudStack>
+
+                                    <MudStack Class="d-flex align-center justify-center mud-width-full py-3">
+                                        <MudButton Variant="Variant.Filled" Color="Color.Primary" Disabled="@(!_isFormValid || !_hasDataChanged)" OnClick="RegisterServiceOrder">
+                                            Register Service Order
+                                        </MudButton>
+                                    </MudStack>
+
+                                    <MudStack>
+                                        <MudButton Variant="Variant.Filled" Color="Color.Error" OnClick="Cancel">Cancel</MudButton>
+                                    </MudStack>
+                                </MudItem>
+                            </MudGrid>
+                        </MudPaper>
+
+                    </MudItem>
+
+                </MudGrid>
+
+            </MudForm>
+        }
+    </Authorized>
+
+</AuthorizeView>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

@@ -1,0 +1,42 @@
+﻿@page "/"
+
+<PageTitle>Home</PageTitle>
+
+<MudContainer >
+    <MudGrid Class="d-flex flex-column justify-center flex-grow-1 gap-4 mx-auto align-center" Elevation="0" Align="Align.Center">
+        <MudItem xs="12"  >
+            <MudStack >
+                <MudText Class="mx-auto" Typo="Typo.h2" GutterBottom="true" Style="font-weight:bold">
+                    Bike R Us
+                </MudText>
+                <MudImage ObjectFit="ObjectFit.Cover" ObjectPosition="ObjectPosition.Center" Height="100" Width="100" Src="e-bike-logo.jpg" Alt="Logo" Elevation="25" Class="rounded-lg m-10 mx-auto " />
+
+                <MudText Class="mb-8"> Welcome to my site! </MudText>
+                <MudStack Class="mb-8">
+                    <MudText Typo="Typo.h6">Servicing is now available, and you can log into different accounts to play with it.   </MudText>
+                    <MudText>Only shop Manager has the access to coupon verification.</MudText>
+                    <MudStack Row="true">
+                        <MudText>User Name: shop@ebikes.com</MudText>
+                        <MudText>Password: Shop@123 </MudText>
+                        <MudText>Role: Shop Manager </MudText>
+                    </MudStack>
+                
+                    <MudText>All managers and mechanic have the access to register order. The following listed login information for mechanic.</MudText>
+                    <MudStack Row="true">
+                        <MudText>User Name: mechanic@ebikes.com</MudText>
+                        <MudText>Password: Mechanic@123 </MudText>
+                        <MudText>Role: Mechanic </MudText>
+                    </MudStack>
+                
+                    <MudText>Store staff doesn't have access to servicing page. </MudText>
+                    <MudStack Row="true">
+                        <MudText>User Name: staff@ebikes.com</MudText>
+                        <MudText>Password: Staff@123</MudText>
+                        <MudText>Role: Store Staff</MudText>
+                    </MudStack>
+                </MudStack>
+            </MudStack>
+        </MudItem>
+
+    </MudGrid>
+</MudContainer>
